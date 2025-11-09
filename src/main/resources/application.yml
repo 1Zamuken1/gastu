@@ -1,0 +1,77 @@
+spring:
+  application:
+    name: gastu
+
+  profiles:
+    active: dev
+
+  # Configuración de Base de Datos
+  datasource:
+    url: jdbc:mysql://localhost:3306/gastu?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    username: root
+    password:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+    # Pool de conexiones HikariCP (por defecto en Spring Boot)
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # Configuración JPA/Hibernate
+  jpa:
+    hibernate:
+      ddl-auto: validate  # IMPORTANTE: validate usa Flyway para cambios, NO auto-genera
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+        use_sql_comments: true
+    show-sql: true
+    open-in-view: false  # Buena práctica para evitar lazy loading issues
+
+  # Configuración de Flyway (Migraciones)
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    clean-disabled: true  # Seguridad: previene borrado accidental de BD
+
+# Configuración de JWT
+jwt:
+  secret: ${JWT_SECRET:gastu-super-secret-key-change-in-production-min-256-bits-long}
+  expiration: 86400000      # 24 horas en milisegundos
+  refresh-expiration: 604800000  # 7 días en milisegundos
+
+# Configuración del servidor
+server:
+  port: 8080
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: on_param
+    include-exception: false
+
+# Logging
+logging:
+  level:
+    root: INFO
+    gastu.gastu: DEBUG
+    org.springframework.web: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# SpringDoc OpenAPI (Swagger)
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha
+  show-actuator: false

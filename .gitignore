@@ -1,0 +1,93 @@
+### Java ###
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+### Maven ###
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+### Spring Boot ###
+.gradle
+**/build/
+!src/**/build/
+*.orig
+spring-boot-starter-parent/
+
+### STS (Spring Tool Suite) ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### VS Code ###
+.vscode/
+*.code-workspace
+
+### macOS ###
+.DS_Store
+.AppleDouble
+.LSOverride
+
+### Windows ###
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+### Linux ###
+*~
+
+### Logs ###
+logs/
+*.log
+*.log.*
+
+### Temporales ###
+*.tmp
+*.bak
+*.swp
+*~.nib
+
+### Base de Datos ###
+*.db
+*.sqlite
+*.sqlite3
+
+### Variables de entorno ###
+.env
+.env.local
+.env.*.local
+
+### Archivos de configuración locales ###
+application-local.yml
+application-local.properties
