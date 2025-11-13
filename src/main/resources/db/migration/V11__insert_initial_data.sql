@@ -36,7 +36,7 @@ SELECT
     'Administrador',
     'admin@gastu.com',
     '3001234567',
-    '$2a$10$xn7EYlAVQ1xYPxKgqpZKc.jWWjSV5qZc3zQFnPEJQ5qE7yCGcT5Yi',  -- Admin123!
+    '$2a$10$sUajTrDC/u8CcOW.gMgrseeVrL12OGa4ztT.G76JfZXDyfFx5qsvG',  -- Admin123!
     rol_id
 FROM rol
 WHERE nombre = 'ADMINISTRADOR'
