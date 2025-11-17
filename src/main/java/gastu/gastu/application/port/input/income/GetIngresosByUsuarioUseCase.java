@@ -1,13 +1,19 @@
 package gastu.gastu.application.port.input.income;
 
 import gastu.gastu.infrastructure.adapter.input.rest.dto.response.income.IngresoResponse;
-import java.time.LocalDate;
+
 import java.util.List;
 
+/**
+ * Puerto de entrada para el caso de uso de Obtener Ingresos de un Usuario
+ */
 public interface GetIngresosByUsuarioUseCase {
-    List<IngresoResponse> getAllActivos(Long usuarioId);
-    List<IngresoResponse> getAll(Long usuarioId);
-    List<IngresoResponse> getByFechaRange(Long usuarioId, LocalDate fechaInicio, LocalDate fechaFin);
-    List<IngresoResponse> getByMes(Long usuarioId, int mes, int anio);
-    IngresoResponse getById(Long ingresoId, Long usuarioId);
+
+    /**
+     * Obtiene todos los ingresos activos de un usuario
+     *
+     * @param usuarioId ID del usuario
+     * @return Lista de ingresos activos
+     */
+    List<IngresoResponse> execute(Long usuarioId);
 }

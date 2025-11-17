@@ -1,11 +1,13 @@
 package gastu.gastu.infrastructure.adapter.input.rest.controller;
 
-import gastu.gastu.application.port.input.income.*;
+import gastu.gastu.application.service.income.CreateIngresoService;
+import gastu.gastu.application.service.income.DeleteIngresoService;
+import gastu.gastu.application.service.income.GetIngresosService;
+import gastu.gastu.application.service.income.UpdateIngresoService;
 import gastu.gastu.infrastructure.adapter.input.rest.dto.request.income.CreateIngresoRequest;
 import gastu.gastu.infrastructure.adapter.input.rest.dto.request.income.UpdateIngresoRequest;
 import gastu.gastu.infrastructure.adapter.input.rest.dto.response.income.IngresoResponse;
-import gastu.gastu.infrastructure.adapter.output.persistence.entity.UsuarioEntity;
-import gastu.gastu.infrastructure.adapter.output.persistence.repository.JpaUsuarioRepository;
+import gastu.gastu.infrastructure.config.security.JwtAuthenticationHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,84 +28,52 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/ingresos")
 @RequiredArgsConstructor
-@Tag(name = "Ingresos", description = "Gestión de ingresos variables del usuario")
+@Tag(name = "Ingresos", description = "Gestión de ingresos del usuario")
 @SecurityRequirement(name = "Bearer Authentication")
 public class IngresoController {
 
-    private final CreateIngresoUseCase createIngresoUseCase;
-    private final GetIngresosByUsuarioUseCase getIngresosUseCase;
-    private final UpdateIngresoUseCase updateIngresoUseCase;
-    private final DeleteIngresoUseCase deleteIngresoUseCase;
-    private final JpaUsuarioRepository usuarioRepository;
+    private final CreateIngresoService createService;
+    private final GetIngresosService getService;
+    private final UpdateIngresoService updateService;
+    private final DeleteIngresoService deleteService;
+    private final JwtAuthenticationHelper jwtAuthHelper;
 
     /**
-     * Crear un nuevo ingreso
-     * POST /api/ingresos
-     */
-    @PostMapping
-    @Operation(summary = "Crear ingreso", description = "Registra un nuevo ingreso variable")
-    public ResponseEntity<IngresoResponse> create(
-            @Valid @RequestBody CreateIngresoRequest request,
-            Authentication authentication) {
-
-        Long usuarioId = getUsuarioIdFromAuth(authentication);
-        IngresoResponse response = createIngresoUseCase.execute(request, usuarioId);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    /**
-     * Listar todos los ingresos activos del usuario
+     * Obtener todos los ingresos activos del usuario autenticado
      * GET /api/ingresos
      */
     @GetMapping
-    @Operation(summary = "Listar ingresos activos", description = "Obtiene todos los ingresos activos del usuario")
-    public ResponseEntity<List<IngresoResponse>> getAllActivos(Authentication authentication) {
-        Long usuarioId = getUsuarioIdFromAuth(authentication);
-        List<IngresoResponse> ingresos = getIngresosUseCase.getAllActivos(usuarioId);
-        return ResponseEntity.ok(ingresos);
-    }
-
-    /**
-     * Listar todos los ingresos (activos e inactivos)
-     * GET /api/ingresos/all
-     */
-    @GetMapping("/all")
-    @Operation(summary = "Listar todos los ingresos", description = "Obtiene todos los ingresos del usuario (activos e inactivos)")
+    @Operation(summary = "Listar ingresos activos", description = "Obtiene todos los ingresos activos del usuario autenticado")
     public ResponseEntity<List<IngresoResponse>> getAll(Authentication authentication) {
-        Long usuarioId = getUsuarioIdFromAuth(authentication);
-        List<IngresoResponse> ingresos = getIngresosUseCase.getAll(usuarioId);
+        Long usuarioId = getUserIdFromAuth(authentication);
+        List<IngresoResponse> ingresos = getService.execute(usuarioId);
         return ResponseEntity.ok(ingresos);
     }
 
     /**
      * Obtener ingresos por rango de fechas
-     * GET /api/ingresos/rango?fechaInicio=2025-01-01&fechaFin=2025-01-31
+     * GET /api/ingresos/fecha?fechaInicio=2025-01-01&fechaFin=2025-01-31
      */
-    @GetMapping("/rango")
-    @Operation(summary = "Ingresos por rango de fechas", description = "Obtiene ingresos entre dos fechas")
+    @GetMapping("/fecha")
+    @Operation(summary = "Listar ingresos por fecha", description = "Obtiene ingresos del usuario en un rango de fechas")
     public ResponseEntity<List<IngresoResponse>> getByFechaRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
             Authentication authentication) {
-
-        Long usuarioId = getUsuarioIdFromAuth(authentication);
-        List<IngresoResponse> ingresos = getIngresosUseCase.getByFechaRange(usuarioId, fechaInicio, fechaFin);
+        Long usuarioId = getUserIdFromAuth(authentication);
+        List<IngresoResponse> ingresos = getService.getByFechaRange(usuarioId, fechaInicio, fechaFin);
         return ResponseEntity.ok(ingresos);
     }
 
     /**
-     * Obtener ingresos de un mes específico
-     * GET /api/ingresos/mes?mes=11&anio=2025
+     * Obtener todos los ingresos (incluidos inactivos)
+     * GET /api/ingresos/todos
      */
-    @GetMapping("/mes")
-    @Operation(summary = "Ingresos por mes", description = "Obtiene ingresos de un mes específico")
-    public ResponseEntity<List<IngresoResponse>> getByMes(
-            @RequestParam int mes,
-            @RequestParam int anio,
-            Authentication authentication) {
-
-        Long usuarioId = getUsuarioIdFromAuth(authentication);
-        List<IngresoResponse> ingresos = getIngresosUseCase.getByMes(usuarioId, mes, anio);
+    @GetMapping("/todos")
+    @Operation(summary = "Listar todos los ingresos", description = "Obtiene todos los ingresos del usuario, incluidos los inactivos")
+    public ResponseEntity<List<IngresoResponse>> getAllIncludeInactive(Authentication authentication) {
+        Long usuarioId = getUserIdFromAuth(authentication);
+        List<IngresoResponse> ingresos = getService.getAllByUsuario(usuarioId);
         return ResponseEntity.ok(ingresos);
     }
 
@@ -116,25 +86,37 @@ public class IngresoController {
     public ResponseEntity<IngresoResponse> getById(
             @PathVariable Long id,
             Authentication authentication) {
-
-        Long usuarioId = getUsuarioIdFromAuth(authentication);
-        IngresoResponse ingreso = getIngresosUseCase.getById(id, usuarioId);
+        Long usuarioId = getUserIdFromAuth(authentication);
+        IngresoResponse ingreso = getService.getById(id, usuarioId);
         return ResponseEntity.ok(ingreso);
     }
 
     /**
-     * Actualizar un ingreso
+     * Crear un nuevo ingreso
+     * POST /api/ingresos
+     */
+    @PostMapping
+    @Operation(summary = "Crear ingreso", description = "Registra un nuevo ingreso para el usuario autenticado")
+    public ResponseEntity<IngresoResponse> create(
+            @Valid @RequestBody CreateIngresoRequest request,
+            Authentication authentication) {
+        Long usuarioId = getUserIdFromAuth(authentication);
+        IngresoResponse response = createService.execute(request, usuarioId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    /**
+     * Actualizar un ingreso existente
      * PUT /api/ingresos/{id}
      */
     @PutMapping("/{id}")
-    @Operation(summary = "Actualizar ingreso")
+    @Operation(summary = "Actualizar ingreso", description = "Actualiza un ingreso existente")
     public ResponseEntity<IngresoResponse> update(
             @PathVariable Long id,
             @Valid @RequestBody UpdateIngresoRequest request,
             Authentication authentication) {
-
-        Long usuarioId = getUsuarioIdFromAuth(authentication);
-        IngresoResponse response = updateIngresoUseCase.execute(id, request, usuarioId);
+        Long usuarioId = getUserIdFromAuth(authentication);
+        IngresoResponse response = updateService.execute(id, request, usuarioId);
         return ResponseEntity.ok(response);
     }
 
@@ -144,37 +126,33 @@ public class IngresoController {
      */
     @DeleteMapping("/{id}")
     @Operation(summary = "Desactivar ingreso", description = "Desactiva un ingreso (soft delete)")
-    public ResponseEntity<Void> desactivar(
+    public ResponseEntity<Void> softDelete(
             @PathVariable Long id,
             Authentication authentication) {
-
-        Long usuarioId = getUsuarioIdFromAuth(authentication);
-        deleteIngresoUseCase.desactivar(id, usuarioId);
+        Long usuarioId = getUserIdFromAuth(authentication);
+        deleteService.softDelete(id, usuarioId);
         return ResponseEntity.noContent().build();
     }
 
     /**
-     * Eliminar permanentemente un ingreso (hard delete)
+     * Eliminar permanentemente un ingreso inactivo
      * DELETE /api/ingresos/{id}/permanente
      */
     @DeleteMapping("/{id}/permanente")
-    @Operation(summary = "Eliminar ingreso permanentemente", description = "Elimina un ingreso permanentemente (debe estar desactivado)")
-    public ResponseEntity<Void> eliminar(
+    @Operation(summary = "Eliminar ingreso permanentemente",
+            description = "Elimina físicamente un ingreso inactivo de la base de datos")
+    public ResponseEntity<Void> hardDelete(
             @PathVariable Long id,
             Authentication authentication) {
-
-        Long usuarioId = getUsuarioIdFromAuth(authentication);
-        deleteIngresoUseCase.eliminar(id, usuarioId);
+        Long usuarioId = getUserIdFromAuth(authentication);
+        deleteService.hardDelete(id, usuarioId);
         return ResponseEntity.noContent().build();
     }
 
     /**
-     * Extrae el ID del usuario desde el Authentication
+     * Extrae el usuarioId del token JWT
      */
-    private Long getUsuarioIdFromAuth(Authentication authentication) {
-        String correo = authentication.getName();
-        UsuarioEntity usuario = usuarioRepository.findByCorreo(correo)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        return usuario.getUsuarioId();
+    private Long getUserIdFromAuth(Authentication authentication) {
+        return jwtAuthHelper.getUserIdFromAuthentication(authentication);
     }
 }

@@ -8,6 +8,7 @@ import java.util.Optional;
 
 /**
  * Puerto de salida para el repositorio de Ingreso
+ * Define las operaciones de persistencia sin depender de la implementación
  */
 public interface IngresoRepositoryPort {
 
@@ -22,32 +23,41 @@ public interface IngresoRepositoryPort {
     Optional<Ingreso> findById(Long id);
 
     /**
-     * Busca ingresos activos de un usuario
+     * Busca todos los ingresos activos de un usuario
      */
-    List<Ingreso> findActivosByUsuario(Long usuarioId);
+    List<Ingreso> findByUsuarioIdAndActivoTrue(Long usuarioId);
 
     /**
-     * Busca todos los ingresos de un usuario (activos e inactivos)
+     * Busca todos los ingresos de un usuario (incluidos inactivos)
      */
-    List<Ingreso> findAllByUsuario(Long usuarioId);
+    List<Ingreso> findByUsuarioId(Long usuarioId);
 
     /**
-     * Busca ingresos en un rango de fechas
+     * Busca ingresos de un usuario en un rango de fechas
      */
-    List<Ingreso> findByUsuarioAndFechaRange(Long usuarioId, LocalDate fechaInicio, LocalDate fechaFin);
+    List<Ingreso> findByUsuarioIdAndFechaTransaccionBetween(
+            Long usuarioId,
+            LocalDate fechaInicio,
+            LocalDate fechaFin
+    );
 
     /**
-     * Busca ingresos de un mes específico
+     * Busca ingresos por concepto
      */
-    List<Ingreso> findByUsuarioAndMes(Long usuarioId, int mes, int anio);
+    List<Ingreso> findByConceptoIngresoId(Long conceptoIngresoId);
 
     /**
-     * Elimina un ingreso (puede ser físico o lógico)
+     * Desactiva todos los ingresos asociados a un concepto
      */
-    void delete(Long id);
+    void desactivarByConceptoId(Long conceptoIngresoId);
 
     /**
-     * Cuenta ingresos activos de un usuario
+     * Elimina físicamente un ingreso (solo para casos excepcionales)
      */
-    long countActivosByUsuario(Long usuarioId);
+    void deleteById(Long id);
+
+    /**
+     * Verifica si existe un ingreso con el ID especificado
+     */
+    boolean existsById(Long id);
 }

@@ -19,7 +19,7 @@ import java.time.LocalDate;
 public class UpdateIngresoRequest {
 
     @NotNull(message = "El monto es obligatorio")
-    @DecimalMin(value = "0.01", message = "El monto debe ser mayor a cero")
+    @DecimalMin(value = "0.01", message = "El monto debe ser mayor a 0")
     @Digits(integer = 10, fraction = 2, message = "El monto debe tener máximo 10 dígitos enteros y 2 decimales")
     private BigDecimal monto;
 
@@ -31,4 +31,6 @@ public class UpdateIngresoRequest {
 
     @NotNull(message = "El concepto de ingreso es obligatorio")
     private Long conceptoIngresoId;
+
+    private Boolean activo;
 }

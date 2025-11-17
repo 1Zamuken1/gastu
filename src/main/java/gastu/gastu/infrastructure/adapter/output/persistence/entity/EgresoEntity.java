@@ -43,7 +43,7 @@ public class EgresoEntity {
     @Column(name = "activo", nullable = false)
     private boolean activo = true;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "concepto_egreso_id", foreignKey = @ForeignKey(name = "fk_egreso_concepto"))
     private ConceptoEgresoEntity conceptoEgreso;
 

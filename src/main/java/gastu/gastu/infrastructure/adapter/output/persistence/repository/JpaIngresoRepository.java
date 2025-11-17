@@ -11,7 +11,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Repositorio JPA para Ingresos
+ * Repositorio JPA para Ingreso
  */
 @Repository
 public interface JpaIngresoRepository extends JpaRepository<IngresoEntity, Long> {
@@ -22,7 +22,7 @@ public interface JpaIngresoRepository extends JpaRepository<IngresoEntity, Long>
     List<IngresoEntity> findByUsuarioUsuarioIdAndActivoTrue(Long usuarioId);
 
     /**
-     * Busca todos los ingresos de un usuario (activos e inactivos)
+     * Busca todos los ingresos de un usuario
      */
     List<IngresoEntity> findByUsuarioUsuarioId(Long usuarioId);
 
@@ -31,9 +31,8 @@ public interface JpaIngresoRepository extends JpaRepository<IngresoEntity, Long>
      */
     @Query("SELECT i FROM IngresoEntity i WHERE i.usuario.usuarioId = :usuarioId " +
             "AND i.fechaTransaccion BETWEEN :fechaInicio AND :fechaFin " +
-            "AND i.activo = true " +
             "ORDER BY i.fechaTransaccion DESC")
-    List<IngresoEntity> findByUsuarioAndFechaRange(
+    List<IngresoEntity> findByUsuarioAndFechaTransaccionBetween(
             @Param("usuarioId") Long usuarioId,
             @Param("fechaInicio") LocalDate fechaInicio,
             @Param("fechaFin") LocalDate fechaFin
@@ -42,32 +41,12 @@ public interface JpaIngresoRepository extends JpaRepository<IngresoEntity, Long>
     /**
      * Busca ingresos por concepto
      */
-    List<IngresoEntity> findByConceptoIngresoConceptoIngresoIdAndActivoTrue(Long conceptoId);
+    List<IngresoEntity> findByConceptoIngresoConceptoIngresoId(Long conceptoIngresoId);
 
     /**
-     * Desactiva todos los ingresos de un concepto (soft delete en cascada)
+     * Desactiva todos los ingresos asociados a un concepto
      */
     @Modifying
-    @Query("UPDATE IngresoEntity i SET i.activo = false " +
-            "WHERE i.conceptoIngreso.conceptoIngresoId = :conceptoId")
+    @Query("UPDATE IngresoEntity i SET i.activo = false WHERE i.conceptoIngreso.conceptoIngresoId = :conceptoId")
     void desactivarByConceptoId(@Param("conceptoId") Long conceptoId);
-
-    /**
-     * Cuenta ingresos activos de un usuario
-     */
-    long countByUsuarioUsuarioIdAndActivoTrue(Long usuarioId);
-
-    /**
-     * Busca ingresos del mes actual de un usuario
-     */
-    @Query("SELECT i FROM IngresoEntity i WHERE i.usuario.usuarioId = :usuarioId " +
-            "AND YEAR(i.fechaTransaccion) = :anio " +
-            "AND MONTH(i.fechaTransaccion) = :mes " +
-            "AND i.activo = true " +
-            "ORDER BY i.fechaTransaccion DESC")
-    List<IngresoEntity> findByUsuarioAndMes(
-            @Param("usuarioId") Long usuarioId,
-            @Param("mes") int mes,
-            @Param("anio") int anio
-    );
 }

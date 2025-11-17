@@ -1,6 +1,5 @@
 package gastu.gastu.domain.model.expense;
 
-import gastu.gastu.domain.model.user.Usuario;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,6 +9,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * Entidad de dominio que representa un Egreso real del usuario
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -22,35 +24,46 @@ public class Egreso {
     private LocalDateTime fechaRegistro;
     private LocalDate fechaTransaccion;
     private boolean activo;
-    private ConceptoEgreso conceptoEgreso;
-    private Usuario usuario;
 
-    public boolean esMontoValido() {
+    // Relaciones
+    private Long conceptoEgresoId;
+    private Long usuarioId;
+
+    /**
+     * Valida que el monto sea positivo
+     */
+    public boolean isMontoValido() {
         return monto != null && monto.compareTo(BigDecimal.ZERO) > 0;
     }
 
-    public boolean esFechaValida() {
+    /**
+     * Valida que la fecha de transacción no sea nula
+     */
+    public boolean isFechaTransaccionValida() {
         return fechaTransaccion != null;
     }
 
-    public boolean esDelAnioActual() {
-        return fechaTransaccion.getYear() == LocalDate.now().getYear();
-    }
-
-    public boolean esDelMes(int mes, int anio) {
-        return fechaTransaccion.getMonthValue() == mes
-                && fechaTransaccion.getYear() == anio;
-    }
-
+    /**
+     * Desactiva el egreso (soft delete)
+     */
     public void desactivar() {
         this.activo = false;
     }
 
+    /**
+     * Activa el egreso
+     */
     public void activar() {
         this.activo = true;
     }
 
-    public boolean tieneDescripcion() {
-        return descripcion != null && !descripcion.trim().isEmpty();
+    /**
+     * Valida que el egreso sea válido para ser creado/actualizado
+     */
+    public boolean isValido() {
+        return isMontoValido()
+                && isFechaTransaccionValida()
+                && conceptoEgresoId != null
+                && usuarioId != null;
     }
 }

@@ -3,19 +3,17 @@ package gastu.gastu.application.service.income;
 import gastu.gastu.application.port.input.income.CreateIngresoUseCase;
 import gastu.gastu.application.port.output.IngresoRepositoryPort;
 import gastu.gastu.domain.exception.BusinessException;
-import gastu.gastu.domain.model.income.ConceptoIngreso;
 import gastu.gastu.domain.model.income.Ingreso;
-import gastu.gastu.domain.model.user.Usuario;
 import gastu.gastu.infrastructure.adapter.input.rest.dto.request.income.CreateIngresoRequest;
 import gastu.gastu.infrastructure.adapter.input.rest.dto.response.income.IngresoResponse;
+import gastu.gastu.infrastructure.adapter.output.persistence.entity.ConceptoIngresoEntity;
 import gastu.gastu.infrastructure.adapter.output.persistence.repository.JpaConceptoIngresoRepository;
-import gastu.gastu.infrastructure.adapter.output.persistence.repository.JpaUsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Servicio para crear Ingresos
+ * Servicio para crear ingresos
  */
 @Service
 @RequiredArgsConstructor
@@ -23,74 +21,59 @@ public class CreateIngresoService implements CreateIngresoUseCase {
 
     private final IngresoRepositoryPort ingresoRepository;
     private final JpaConceptoIngresoRepository conceptoRepository;
-    private final JpaUsuarioRepository usuarioRepository;
 
     @Override
     @Transactional
     public IngresoResponse execute(CreateIngresoRequest request, Long usuarioId) {
-        // Validar que el usuario existe
-        var usuarioEntity = usuarioRepository.findById(usuarioId)
-                .orElseThrow(() -> new BusinessException("Usuario no encontrado"));
+        // 1. Validar que el concepto existe y está activo
+        ConceptoIngresoEntity concepto = conceptoRepository.findById(request.getConceptoIngresoId())
+                .orElseThrow(() -> new BusinessException(
+                        "Concepto de ingreso no encontrado con ID: " + request.getConceptoIngresoId()));
 
-        // Validar que el concepto existe y está activo
-        var conceptoEntity = conceptoRepository.findById(request.getConceptoIngresoId())
-                .orElseThrow(() -> new BusinessException("Concepto de ingreso no encontrado"));
-
-        if (!conceptoEntity.isActivo()) {
+        if (!concepto.isActivo()) {
             throw new BusinessException("El concepto de ingreso está inactivo");
         }
 
-        // Validar que el concepto es válido para ingresos variables (VARIABLE o AMBOS)
-        if (!conceptoEntity.getTipoTransaccion().esValidoParaVariable()) {
-            throw new BusinessException("El concepto seleccionado no es válido para ingresos variables. Use una proyección para conceptos recurrentes.");
+        // 2. Validar que el concepto sea válido para transacciones variables
+        if (!concepto.getTipoTransaccion().esValidoParaVariable()) {
+            throw new BusinessException(
+                    "El concepto '" + concepto.getNombre() +
+                            "' solo puede usarse para ingresos recurrentes (proyecciones)");
         }
 
-        // Crear el ingreso
+        // 3. Crear el ingreso
         Ingreso ingreso = Ingreso.builder()
                 .monto(request.getMonto())
                 .descripcion(request.getDescripcion())
                 .fechaTransaccion(request.getFechaTransaccion())
+                .conceptoIngresoId(request.getConceptoIngresoId())
+                .usuarioId(usuarioId)
                 .activo(true)
-                .conceptoIngreso(ConceptoIngreso.builder()
-                        .conceptoIngresoId(conceptoEntity.getConceptoIngresoId())
-                        .nombre(conceptoEntity.getNombre())
-                        .descripcion(conceptoEntity.getDescripcion())
-                        .tipoTransaccion(conceptoEntity.getTipoTransaccion())
-                        .build())
-                .usuario(Usuario.builder()
-                        .usuarioId(usuarioEntity.getUsuarioId())
-                        .nombre(usuarioEntity.getNombre())
-                        .correo(usuarioEntity.getCorreo())
-                        .build())
                 .build();
 
-        // Validar el dominio
-        if (!ingreso.esMontoValido()) {
-            throw new BusinessException("El monto debe ser mayor a cero");
+        // 4. Validar el ingreso
+        if (!ingreso.isValido()) {
+            throw new BusinessException("Los datos del ingreso son inválidos");
         }
 
-        if (!ingreso.esFechaValida()) {
-            throw new BusinessException("La fecha de transacción es obligatoria");
-        }
-
-        // Guardar
+        // 5. Guardar
         Ingreso ingresoGuardado = ingresoRepository.save(ingreso);
 
-        // Retornar response
-        return mapToResponse(ingresoGuardado);
+        // 6. Retornar respuesta
+        return mapToResponse(ingresoGuardado, concepto);
     }
 
-    private IngresoResponse mapToResponse(Ingreso ingreso) {
+    private IngresoResponse mapToResponse(Ingreso ingreso, ConceptoIngresoEntity concepto) {
         return IngresoResponse.builder()
                 .ingresoId(ingreso.getIngresoId())
                 .monto(ingreso.getMonto())
                 .descripcion(ingreso.getDescripcion())
                 .fechaTransaccion(ingreso.getFechaTransaccion())
                 .fechaRegistro(ingreso.getFechaRegistro())
-                .concepto(IngresoResponse.ConceptoIngresoSimple.builder()
-                        .conceptoIngresoId(ingreso.getConceptoIngreso().getConceptoIngresoId())
-                        .nombre(ingreso.getConceptoIngreso().getNombre())
-                        .descripcion(ingreso.getConceptoIngreso().getDescripcion())
+                .activo(ingreso.isActivo())
+                .concepto(IngresoResponse.ConceptoIngresoSimpleResponse.builder()
+                        .conceptoIngresoId(concepto.getConceptoIngresoId())
+                        .nombre(concepto.getNombre())
                         .build())
                 .build();
     }

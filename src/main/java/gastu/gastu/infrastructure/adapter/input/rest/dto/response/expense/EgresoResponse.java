@@ -10,6 +10,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * DTO de respuesta para Egreso
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -26,15 +29,17 @@ public class EgresoResponse {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaRegistro;
 
-    private ConceptoEgresoSimple concepto;
+    private boolean activo;
+
+    // Información del concepto (simplificada)
+    private ConceptoEgresoSimpleResponse concepto;
 
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class ConceptoEgresoSimple {
+    public static class ConceptoEgresoSimpleResponse {
         private Long conceptoEgresoId;
         private String nombre;
-        private String descripcion;
     }
 }

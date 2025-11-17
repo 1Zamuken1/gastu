@@ -10,6 +10,9 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * DTO de respuesta para Ingreso
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -26,15 +29,17 @@ public class IngresoResponse {
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime fechaRegistro;
 
-    private ConceptoIngresoSimple concepto;
+    private boolean activo;
+
+    // Información del concepto (simplificada)
+    private ConceptoIngresoSimpleResponse concepto;
 
     @Data
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class ConceptoIngresoSimple {
+    public static class ConceptoIngresoSimpleResponse {
         private Long conceptoIngresoId;
         private String nombre;
-        private String descripcion;
     }
 }

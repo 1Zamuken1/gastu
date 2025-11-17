@@ -1,6 +1,5 @@
 package gastu.gastu.domain.model.income;
 
-import gastu.gastu.domain.model.user.Usuario;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,7 +10,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * Entidad de dominio que representa un Ingreso real
+ * Entidad de dominio que representa un Ingreso real del usuario
  */
 @Data
 @Builder
@@ -25,36 +24,23 @@ public class Ingreso {
     private LocalDateTime fechaRegistro;
     private LocalDate fechaTransaccion;
     private boolean activo;
-    private ConceptoIngreso conceptoIngreso;
-    private Usuario usuario;
+
+    // Relaciones
+    private Long conceptoIngresoId;
+    private Long usuarioId;
 
     /**
      * Valida que el monto sea positivo
      */
-    public boolean esMontoValido() {
+    public boolean isMontoValido() {
         return monto != null && monto.compareTo(BigDecimal.ZERO) > 0;
     }
 
     /**
      * Valida que la fecha de transacción no sea nula
      */
-    public boolean esFechaValida() {
+    public boolean isFechaTransaccionValida() {
         return fechaTransaccion != null;
-    }
-
-    /**
-     * Verifica si el ingreso es del año en curso
-     */
-    public boolean esDelAnioActual() {
-        return fechaTransaccion.getYear() == LocalDate.now().getYear();
-    }
-
-    /**
-     * Verifica si el ingreso es del mes especificado
-     */
-    public boolean esDelMes(int mes, int anio) {
-        return fechaTransaccion.getMonthValue() == mes
-                && fechaTransaccion.getYear() == anio;
     }
 
     /**
@@ -72,9 +58,12 @@ public class Ingreso {
     }
 
     /**
-     * Verifica si tiene una descripción
+     * Valida que el ingreso sea válido para ser creado/actualizado
      */
-    public boolean tieneDescripcion() {
-        return descripcion != null && !descripcion.trim().isEmpty();
+    public boolean isValido() {
+        return isMontoValido()
+                && isFechaTransaccionValida()
+                && conceptoIngresoId != null
+                && usuarioId != null;
     }
 }
