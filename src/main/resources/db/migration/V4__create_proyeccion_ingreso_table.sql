@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS proyeccion_ingreso (
     fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     concepto_ingreso_id BIGINT UNSIGNED NOT NULL,
     usuario_id BIGINT UNSIGNED NOT NULL,
+    frecuencia VARCHAR(50) DEFAULT 'mensual',  -- << nueva columna
 
     -- Índices
     INDEX idx_usuario_id (usuario_id),
@@ -29,6 +30,3 @@ CREATE TABLE IF NOT EXISTS proyeccion_ingreso (
         ON DELETE CASCADE
         ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Comentarios
-ALTER TABLE proyeccion_ingreso COMMENT = 'Ingresos programados o recurrentes del usuario';
