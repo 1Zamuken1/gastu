@@ -21,6 +21,8 @@ public class CreateEgresoService implements CreateEgresoUseCase {
 
     private final EgresoRepositoryPort egresoRepository;
     private final JpaConceptoEgresoRepository conceptoRepository;
+    private final gastu.gastu.application.service.shared.BalanceService balanceService;
+    private final gastu.gastu.application.service.notification.NotificacionService notificacionService;
 
     @Override
     @Transactional

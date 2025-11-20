@@ -34,6 +34,9 @@ public class EgresoResponse {
     // Información del concepto (simplificada)
     private ConceptoEgresoSimpleResponse concepto;
 
+    // ⭐ NUEVO: Alerta si el egreso genera problemas financieros
+    private gastu.gastu.infrastructure.adapter.input.rest.dto.response.shared.AlertaResponse alerta;
+
     @Data
     @Builder
     @NoArgsConstructor
