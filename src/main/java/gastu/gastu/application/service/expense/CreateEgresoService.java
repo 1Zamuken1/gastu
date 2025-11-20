@@ -9,12 +9,16 @@ import gastu.gastu.infrastructure.adapter.input.rest.dto.response.expense.Egreso
 import gastu.gastu.infrastructure.adapter.output.persistence.entity.ConceptoEgresoEntity;
 import gastu.gastu.infrastructure.adapter.output.persistence.repository.JpaConceptoEgresoRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 
 /**
  * Servicio para crear egresos
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CreateEgresoService implements CreateEgresoUseCase {
@@ -27,6 +31,9 @@ public class CreateEgresoService implements CreateEgresoUseCase {
     @Override
     @Transactional
     public EgresoResponse execute(CreateEgresoRequest request, Long usuarioId) {
+        log.info("Creando egreso para usuario: {}, monto: {}, fecha: {}",
+                usuarioId, request.getMonto(), request.getFechaTransaccion());
+
         // 1. Validar que el concepto existe y está activo
         ConceptoEgresoEntity concepto = conceptoRepository.findById(request.getConceptoEgresoId())
                 .orElseThrow(() -> new BusinessException(
@@ -60,9 +67,51 @@ public class CreateEgresoService implements CreateEgresoUseCase {
 
         // 5. Guardar
         Egreso egresoGuardado = egresoRepository.save(egreso);
+        log.info("Egreso guardado con ID: {}", egresoGuardado.getEgresoId());
 
-        // 6. Retornar respuesta
-        return mapToResponse(egresoGuardado, concepto);
+        // 6. CALCULAR BALANCE Y VERIFICAR ALERTA
+        BigDecimal balance = balanceService.calcularBalanceMes(
+                usuarioId,
+                request.getFechaTransaccion()
+        );
+
+        log.info("Balance calculado del mes: {}", balance);
+
+        gastu.gastu.infrastructure.adapter.input.rest.dto.response.shared.AlertaResponse alerta =
+                balanceService.verificarBalanceNegativo(
+                        usuarioId,
+                        request.getFechaTransaccion(),
+                        balance
+                );
+
+        if (alerta != null) {
+            log.warn("ALERTA GENERADA: {}", alerta.getTitulo());
+
+            String mesReferencia = request.getFechaTransaccion().getMonth().toString();
+
+            // Calcular totales para la notificación
+            BigDecimal totalEgresos = balance.abs().add(request.getMonto());
+            BigDecimal totalIngresos = request.getMonto().subtract(balance.abs());
+
+            log.info("Total Ingresos: {}, Total Egresos: {}", totalIngresos, totalEgresos);
+
+            notificacionService.crearNotificacionSaldoNegativo(
+                    usuarioId,
+                    balance,
+                    mesReferencia,
+                    totalIngresos,
+                    totalEgresos
+            );
+            log.info("Notificación creada en BD");
+        } else {
+            log.info("No se generó alerta. Balance positivo.");
+        }
+
+        // 7. Retornar respuesta con alerta
+        EgresoResponse response = mapToResponse(egresoGuardado, concepto);
+        response.setAlerta(alerta);
+
+        return response;
     }
 
     private EgresoResponse mapToResponse(Egreso egreso, ConceptoEgresoEntity concepto) {
